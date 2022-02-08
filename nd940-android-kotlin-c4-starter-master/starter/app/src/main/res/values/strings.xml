@@ -33,6 +33,10 @@
     <string name="welcome">Welcome</string>
     <string name="err_enter_title">Please enter title</string>
     <string name="err_select_location">Please select location</string>
+    <string name="geofences_added">Geofences added</string>
+    <string name="title">Title: %1$s</string>
+    <string name="description">Description: %1s</string>
+    <string name="location">Location: %1s</string>
 
     <!-- Error strings -->
     <string name="geofence_unknown_error">Unknown error: the Geofence service is not available now.</string>
