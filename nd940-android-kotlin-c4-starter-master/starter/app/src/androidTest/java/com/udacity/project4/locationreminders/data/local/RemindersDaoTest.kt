@@ -3,6 +3,7 @@ package com.udacity.project4.locationreminders.data.local
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 import com.udacity.project4.locationreminders.data.dto.ReminderDTO
@@ -27,4 +28,37 @@ class RemindersDaoTest {
 
 //    TODO: Add testing implementation to the RemindersDao.kt
 
+    // execute each tasks synchronously using architecture components
+    @get:Rule
+    var instantTaskExecutorRule = InstantTaskExecutorRule()
+
+    private lateinit var database: RemindersDatabase
+
+    @Before
+    fun setUp() {
+        database = Room.inMemoryDatabaseBuilder(
+            getApplicationContext(),
+            RemindersDatabase::class.java
+        ).allowMainThreadQueries().build()
+    }
+
+    @After
+    fun cleanUp() {
+        database.close()
+    }
+
+    @Test
+    fun saveReminderAndGetReminderById() {
+        TODO()
+    }
+
+    @Test
+    fun saveReminderAndGetReminders() {
+        TODO()
+    }
+
+    @Test
+    fun saveReminderAndDeleteAllReminders() {
+        TODO()
+    }
 }

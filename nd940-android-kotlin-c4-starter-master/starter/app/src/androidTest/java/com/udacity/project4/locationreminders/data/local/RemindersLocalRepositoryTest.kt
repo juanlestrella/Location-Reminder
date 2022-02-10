@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import com.udacity.project4.locationreminders.data.ReminderDataSource
 import com.udacity.project4.locationreminders.data.dto.ReminderDTO
 import com.udacity.project4.locationreminders.data.dto.Result
 import kotlinx.coroutines.Dispatchers
@@ -26,5 +27,28 @@ import org.junit.runner.RunWith
 class RemindersLocalRepositoryTest {
 
 //    TODO: Add testing implementation to the RemindersLocalRepository.kt
+
+    // execute each task synchronously using architecture components
+    @get:Rule
+    var instantTaskExecutorRule = InstantTaskExecutorRule()
+
+    private lateinit var repository: RemindersLocalRepository
+    private lateinit var database: RemindersDatabase
+
+    @Before
+    fun setUp() {
+        database = Room.inMemoryDatabaseBuilder(
+            ApplicationProvider.getApplicationContext(),
+            RemindersDatabase::class.java
+        ).allowMainThreadQueries().build()
+
+        repository = RemindersLocalRepository(
+            database.reminderDao(),
+            Dispatchers.Main
+        )
+    }
+
+    @After
+    fun cleanUp() = database.close()
 
 }
