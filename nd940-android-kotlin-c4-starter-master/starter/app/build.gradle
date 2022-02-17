@@ -126,6 +126,10 @@ dependencies {
     implementation 'com.android.support:multidex:1.0.3'
 
     implementation 'androidx.preference:preference-ktx:1.1.0-rc01'
+
+    // autoclosekointest
+//    testImplementation("io.insert-koin:koin-test:$koinVersion") { exclude group: 'org.mockito' }
+//    testImplementation("io.insert-koin:koin-test-junit4:$koinVersion")
 }
 
 apply plugin: 'com.google.gms.google-services'

@@ -1,16 +1,24 @@
 package com.udacity.project4
 
 import android.app.Application
+import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
+import androidx.test.espresso.IdlingRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import com.udacity.project4.locationreminders.RemindersActivity
 import com.udacity.project4.locationreminders.data.ReminderDataSource
 import com.udacity.project4.locationreminders.data.local.LocalDB
 import com.udacity.project4.locationreminders.data.local.RemindersLocalRepository
 import com.udacity.project4.locationreminders.reminderslist.RemindersListViewModel
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
+import com.udacity.project4.util.DataBindingIdlingResource
+import com.udacity.project4.util.monitorActivity
+import com.udacity.project4.utils.EspressoIdlingResource
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Before
+import org.junit.Test
 import org.junit.runner.RunWith
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.context.startKoin
@@ -27,6 +35,7 @@ class RemindersActivityTest :
 
     private lateinit var repository: ReminderDataSource
     private lateinit var appContext: Application
+    private val dataBindingIdlingResources = DataBindingIdlingResource()
 
     /**
      * As we use Koin as a Service Locator Library to develop our code, we'll also use Koin to test our code.
@@ -59,13 +68,30 @@ class RemindersActivityTest :
         //Get our real repository
         repository = get()
 
-        //clear the data to start fresh
+//        clear the data to start fresh
         runBlocking {
             repository.deleteAllReminders()
         }
     }
 
+    @Before
+    fun registerIdlingResource() {
+        IdlingRegistry.getInstance().register(EspressoIdlingResource.countingIdlingResource)
+        IdlingRegistry.getInstance().register(dataBindingIdlingResources)
+    }
 
-//    TODO: add End to End testing to the app
+    @After
+    fun unregisterIdlingResource() {
+        IdlingRegistry.getInstance().unregister(EspressoIdlingResource.countingIdlingResource)
+        IdlingRegistry.getInstance().unregister(dataBindingIdlingResources)
+    }
+    //    TODO: add End to End testing to the app
+    @Test
+    fun loggingInUser() = runBlocking {
+        // start up Authentication screen
+        val activityScenario = ActivityScenario.launch(RemindersActivity::class.java)
+        dataBindingIdlingResources.monitorActivity(activityScenario)
+        // use onView to test end to end activity
+    }
 
 }
