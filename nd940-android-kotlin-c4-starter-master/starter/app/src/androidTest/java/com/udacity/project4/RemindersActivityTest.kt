@@ -3,7 +3,12 @@ package com.udacity.project4
 import android.app.Application
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
+import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
+import androidx.test.espresso.action.ViewActions.*
+import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
+import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.udacity.project4.locationreminders.RemindersActivity
@@ -15,7 +20,9 @@ import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.util.DataBindingIdlingResource
 import com.udacity.project4.util.monitorActivity
 import com.udacity.project4.utils.EspressoIdlingResource
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.hamcrest.Matchers.not
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -85,13 +92,69 @@ class RemindersActivityTest :
         IdlingRegistry.getInstance().unregister(EspressoIdlingResource.countingIdlingResource)
         IdlingRegistry.getInstance().unregister(dataBindingIdlingResources)
     }
+
     //    TODO: add End to End testing to the app
+    // In this scenario, User already Logged In.
+    // User will create a reminder
     @Test
-    fun loggingInUser() = runBlocking {
+    fun createReminder() = runBlocking {
         // start up Authentication screen
         val activityScenario = ActivityScenario.launch(RemindersActivity::class.java)
         dataBindingIdlingResources.monitorActivity(activityScenario)
         // use onView to test end to end activity
+        // click the FAB and check if all editboxes are displayed
+        onView(withId(R.id.addReminderFAB)).perform(click())
+        onView(withId(R.id.reminderTitle)).check(matches(isDisplayed()))
+        onView(withId(R.id.reminderDescription)).check(matches(isDisplayed()))
+        onView(withId(R.id.selectLocation)).check(matches(isDisplayed()))
+        // Add values to the title,descrption, and location
+        onView(withId(R.id.reminderTitle)).perform(replaceText("Title1"))
+        onView(withId(R.id.reminderDescription)).perform(replaceText("Description1"))
+        onView(withId(R.id.selectLocation)).perform(click())
+        onView(withId(R.id.map)).perform(longClick())
+        onView(withId(R.id.saveButton)).perform(click())
+        // check if added text are displayed
+        onView(withText("Title1")).check(matches(isDisplayed()))
+        onView(withText("Description1")).check(matches(isDisplayed()))
+        onView(withId(R.id.selectedLocation)).check(matches(isDisplayed()))
+        // save the reminder
+        onView(withId(R.id.saveReminder)).perform(click())
+        // check if reminder is added to list of reminders
+        onView(withText("Title1")).check(matches(isDisplayed()))
+        onView(withText("Description1")).check(matches(isDisplayed()))
+        // check that the "no data" string is not visible
+        onView(withId(R.id.noDataTextView)).check(matches(withEffectiveVisibility(Visibility.GONE)))
+        delay(2000)
+        // close activity to reset Database
+        activityScenario.close()
+    }
+
+    @Test
+    fun saveReminderEmptyTitle() = runBlocking {
+        val activityScenario = ActivityScenario.launch(RemindersActivity::class.java)
+        dataBindingIdlingResources.monitorActivity(activityScenario)
+
+        onView(withId(R.id.addReminderFAB)).perform(click())
+        // try to save without title
+        onView(withId(R.id.saveReminder)).perform(click())
+        onView(withId(R.id.snackbar_text)).check(matches(withText("Please enter title")))
+        delay(2000)
+        activityScenario.close()
+    }
+
+    @Test
+    fun saveReminderEmptyLocation() = runBlocking {
+        val activityScenario = ActivityScenario.launch(RemindersActivity::class.java)
+        dataBindingIdlingResources.monitorActivity(activityScenario)
+
+        onView(withId(R.id.addReminderFAB)).perform(click())
+        // try to save with title, but without location
+        onView(withId(R.id.reminderTitle)).perform(replaceText("Title1"))
+        onView(withId(R.id.saveReminder)).perform(click())
+        onView(withId(R.id.snackbar_text)).check(matches(withText("Please select location")))
+
+        delay(2000)
+        activityScenario.close()
     }
 
 }

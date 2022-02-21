@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
@@ -29,6 +30,7 @@ import com.udacity.project4.locationreminders.geofence.GeofenceBroadcastReceiver
 import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
 import com.udacity.project4.utils.*
 import org.koin.android.ext.android.inject
+import java.lang.Exception
 
 class SaveReminderFragment : BaseFragment() {
     //Get the view model this time as a single to be shared with the another fragment
@@ -38,13 +40,19 @@ class SaveReminderFragment : BaseFragment() {
     private lateinit var geofencingClient: GeofencingClient
     private lateinit var reminder: ReminderDataItem
     private val runningQOrLater = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q
+    private lateinit var contxt: Context
 
     private val geofencePendingIntent: PendingIntent by lazy {
-        val intent = Intent(requireActivity(), GeofenceBroadcastReceiver::class.java)
+        val intent = Intent(contxt, GeofenceBroadcastReceiver::class.java)
         intent.action = ACTION_GEOFENCE_EVENT
         // add FLAG_UPDATE_CURRENT to get the same pending intent back when calling
         // addGeofences() and removeGeofences()
-        PendingIntent.getBroadcast(requireActivity(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+        PendingIntent.getBroadcast(contxt, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+    }
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        contxt = context
     }
 
     override fun onCreateView(
@@ -57,7 +65,7 @@ class SaveReminderFragment : BaseFragment() {
         setDisplayHomeAsUpEnabled(true)
 
         binding.viewModel = _viewModel
-        geofencingClient = LocationServices.getGeofencingClient(requireActivity())
+        geofencingClient = LocationServices.getGeofencingClient(contxt)
 
         return binding.root
     }
@@ -82,13 +90,13 @@ class SaveReminderFragment : BaseFragment() {
     private fun foregroundAndBackgroundLocationPermissionApproved(): Boolean {
         val foregroundLocationApproved = (
                 PackageManager.PERMISSION_GRANTED ==
-                        ActivityCompat.checkSelfPermission(requireContext(),
+                        ActivityCompat.checkSelfPermission(contxt,
                             Manifest.permission.ACCESS_FINE_LOCATION))
         val backgroundPermissionApproved =
             if (runningQOrLater) {
                 PackageManager.PERMISSION_GRANTED ==
                         ActivityCompat.checkSelfPermission(
-                            requireContext(), Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                            contxt, Manifest.permission.ACCESS_BACKGROUND_LOCATION
                         )
             } else {
                 true
@@ -137,11 +145,10 @@ class SaveReminderFragment : BaseFragment() {
             val longitude = _viewModel.longitude.value
 
 //          TODO: use the user entered reminder details to:
-//              1) add a geofencing request
-//              2) save the reminder to the local db
             reminder = ReminderDataItem(title, description, location, latitude, longitude)
-            addGeofence()
-            _viewModel.validateAndSaveReminder(reminder)
+            if(_viewModel.validateAndSaveReminder(reminder)){
+                checkPermissionsAndStartGeofencing()
+            }
         }
     }
 
@@ -193,7 +200,7 @@ class SaveReminderFragment : BaseFragment() {
             priority = LocationRequest.PRIORITY_LOW_POWER
         }
         val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
-        val settingsClient = LocationServices.getSettingsClient(requireActivity())
+        val settingsClient = LocationServices.getSettingsClient(contxt)
         val locationSettingsResponseTask =
             settingsClient.checkLocationSettings(builder.build())
         locationSettingsResponseTask.addOnFailureListener { exception ->
