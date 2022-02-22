@@ -21,6 +21,7 @@ import com.udacity.project4.locationreminders.data.local.RemindersLocalRepositor
 import com.udacity.project4.locationreminders.reminderslist.RemindersListViewModel
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.util.DataBindingIdlingResource
+import com.udacity.project4.util.ToastManager
 import com.udacity.project4.util.monitorActivity
 import com.udacity.project4.utils.EspressoIdlingResource
 import kotlinx.coroutines.delay
@@ -47,6 +48,7 @@ class RemindersActivityTest :
     private lateinit var repository: ReminderDataSource
     private lateinit var appContext: Application
     private val dataBindingIdlingResources = DataBindingIdlingResource()
+    private val toastIdlingResource = ToastManager.getIdlingResource()
 
     // for testing toast
     private fun getActivity(activityScenario: ActivityScenario<RemindersActivity>): Activity? {
@@ -98,19 +100,21 @@ class RemindersActivityTest :
     fun registerIdlingResource() {
         IdlingRegistry.getInstance().register(EspressoIdlingResource.countingIdlingResource)
         IdlingRegistry.getInstance().register(dataBindingIdlingResources)
+//        IdlingRegistry.getInstance().register(toastIdlingResource)
     }
 
     @After
     fun unregisterIdlingResource() {
         IdlingRegistry.getInstance().unregister(EspressoIdlingResource.countingIdlingResource)
         IdlingRegistry.getInstance().unregister(dataBindingIdlingResources)
+//        IdlingRegistry.getInstance().unregister(toastIdlingResource)
     }
 
     //    TODO: add End to End testing to the app
     // In this scenario, User already Logged In.
     // User will create a reminder
     @Test
-    fun createReminder() = runBlocking {
+    fun createAndSaveReminder() = runBlocking {
         // start up Authentication screen
         val activityScenario = ActivityScenario.launch(RemindersActivity::class.java)
         dataBindingIdlingResources.monitorActivity(activityScenario)
@@ -137,7 +141,16 @@ class RemindersActivityTest :
         onView(withText("Description1")).check(matches(isDisplayed()))
         // check that the "no data" string is not visible
         onView(withId(R.id.noDataTextView)).check(matches(withEffectiveVisibility(Visibility.GONE)))
-        delay(2000)
+        // check the toast "Geofences added"
+        onView(withText(R.string.geofences_added))
+            .inRoot(withDecorView(not(`is`(getActivity(activityScenario)?.window?.decorView))))
+            .check(matches(isDisplayed()))
+//        ToastManager.increment()
+        // check the toast "Reminder Saved !"
+//        onView(withText(R.string.reminder_saved))
+//            .inRoot(withDecorView(not(`is`(getActivity(activityScenario)?.window?.decorView))))
+//            .check(matches(isDisplayed()))
+        //delay(2000)
         // close activity to reset Database
         activityScenario.close()
     }
@@ -150,9 +163,11 @@ class RemindersActivityTest :
         onView(withId(R.id.addReminderFAB)).perform(click())
         // try to save without title
         onView(withId(R.id.saveReminder)).perform(click())
-        //onView(withId(R.id.snackbar_text)).check(matches(withText("Please enter title")))
-        onView(withText(R.string.err_enter_title))
-            .inRoot(withDecorView(`is`(getActivity(activityScenario)?.window?.decorView))).check(matches(isDisplayed()))
+        // it's a Snackbar, not toast
+        onView(withId(R.id.snackbar_text)).check(matches(withText("Please enter title")))
+//        onView(withText(R.string.err_enter_title))
+//            .inRoot(withDecorView(not(`is`(getActivity(activityScenario)?.window?.decorView))))
+//            .check(matches(isDisplayed()))
         delay(2000)
         activityScenario.close()
     }
@@ -166,9 +181,10 @@ class RemindersActivityTest :
         // try to save with title, but without location
         onView(withId(R.id.reminderTitle)).perform(replaceText("Title1"))
         onView(withId(R.id.saveReminder)).perform(click())
-        //onView(withId(R.id.snackbar_text)).check(matches(withText("Please select location")))
-        onView(withText(R.string.err_select_location))
-            .inRoot(withDecorView(`is`(getActivity(activityScenario)?.window?.decorView))).check(matches(isDisplayed()))
+        // it's a Snackbar, not toast
+        onView(withId(R.id.snackbar_text)).check(matches(withText("Please select location")))
+//        onView(withText(R.string.err_select_location))
+//            .inRoot(withDecorView(`is`(getActivity(activityScenario)?.window?.decorView))).check(matches(isDisplayed()))
 
         delay(2000)
         activityScenario.close()
