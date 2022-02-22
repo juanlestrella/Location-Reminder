@@ -1,6 +1,8 @@
 package com.udacity.project4
 
+import android.app.Activity
 import android.app.Application
+import android.app.PendingIntent.getActivity
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.espresso.Espresso.onView
@@ -8,6 +10,7 @@ import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.*
 import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.RootMatchers.withDecorView
 import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -22,6 +25,7 @@ import com.udacity.project4.util.monitorActivity
 import com.udacity.project4.utils.EspressoIdlingResource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.hamcrest.Matchers.`is`
 import org.hamcrest.Matchers.not
 import org.junit.After
 import org.junit.Before
@@ -43,6 +47,15 @@ class RemindersActivityTest :
     private lateinit var repository: ReminderDataSource
     private lateinit var appContext: Application
     private val dataBindingIdlingResources = DataBindingIdlingResource()
+
+    // for testing toast
+    private fun getActivity(activityScenario: ActivityScenario<RemindersActivity>): Activity? {
+        var activity: Activity? = null
+        activityScenario.onActivity {
+            activity = it
+        }
+        return activity
+    }
 
     /**
      * As we use Koin as a Service Locator Library to develop our code, we'll also use Koin to test our code.
@@ -137,7 +150,9 @@ class RemindersActivityTest :
         onView(withId(R.id.addReminderFAB)).perform(click())
         // try to save without title
         onView(withId(R.id.saveReminder)).perform(click())
-        onView(withId(R.id.snackbar_text)).check(matches(withText("Please enter title")))
+        //onView(withId(R.id.snackbar_text)).check(matches(withText("Please enter title")))
+        onView(withText(R.string.err_enter_title))
+            .inRoot(withDecorView(`is`(getActivity(activityScenario)?.window?.decorView))).check(matches(isDisplayed()))
         delay(2000)
         activityScenario.close()
     }
@@ -151,7 +166,9 @@ class RemindersActivityTest :
         // try to save with title, but without location
         onView(withId(R.id.reminderTitle)).perform(replaceText("Title1"))
         onView(withId(R.id.saveReminder)).perform(click())
-        onView(withId(R.id.snackbar_text)).check(matches(withText("Please select location")))
+        //onView(withId(R.id.snackbar_text)).check(matches(withText("Please select location")))
+        onView(withText(R.string.err_select_location))
+            .inRoot(withDecorView(`is`(getActivity(activityScenario)?.window?.decorView))).check(matches(isDisplayed()))
 
         delay(2000)
         activityScenario.close()

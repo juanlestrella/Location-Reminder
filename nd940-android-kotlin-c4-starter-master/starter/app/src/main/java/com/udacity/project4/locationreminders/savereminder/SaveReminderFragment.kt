@@ -17,7 +17,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
+import androidx.core.app.ActivityCompat.requestPermissions
 import androidx.databinding.DataBindingUtil
+import androidx.fragment.app.Fragment
+import com.google.android.gms.auth.api.signin.GoogleSignIn.requestPermissions
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.google.android.material.snackbar.Snackbar
@@ -70,10 +73,10 @@ class SaveReminderFragment : BaseFragment() {
         return binding.root
     }
 
-    override fun onStart() {
-        super.onStart()
-        checkPermissionsAndStartGeofencing()
-    }
+//    override fun onStart() {
+//        super.onStart()
+//        checkPermissionsAndStartGeofencing()
+//    }
 
     private fun checkPermissionsAndStartGeofencing() {
         if (foregroundAndBackgroundLocationPermissionApproved()) {
@@ -120,8 +123,7 @@ class SaveReminderFragment : BaseFragment() {
             else -> REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE
         }
         Log.d(TAG, "Request foreground only location permission")
-        ActivityCompat.requestPermissions(
-            requireActivity(),
+        requestPermissions(
             permissionsArray,
             resultCode
         )
@@ -146,7 +148,10 @@ class SaveReminderFragment : BaseFragment() {
 
 //          TODO: use the user entered reminder details to:
             reminder = ReminderDataItem(title, description, location, latitude, longitude)
-            if(_viewModel.validateAndSaveReminder(reminder)){
+//            if(_viewModel.validateAndSaveReminder(reminder)){
+//                checkPermissionsAndStartGeofencing()
+//            }
+            if(_viewModel.validateEnteredData(reminder)){
                 checkPermissionsAndStartGeofencing()
             }
         }
@@ -206,8 +211,12 @@ class SaveReminderFragment : BaseFragment() {
         locationSettingsResponseTask.addOnFailureListener { exception ->
             if (exception is ResolvableApiException && resolve){
                 try {
-                    exception.startResolutionForResult(requireActivity(),
-                        REQUEST_TURN_DEVICE_LOCATION_ON)
+//                    exception.startResolutionForResult(requireActivity(),
+//                        REQUEST_TURN_DEVICE_LOCATION_ON)
+                    startIntentSenderForResult(
+                        exception.resolution.intentSender,
+                    REQUEST_TURN_DEVICE_LOCATION_ON,
+                    null, 0,0,0,null)
                 } catch (sendEx: IntentSender.SendIntentException) {
                     Log.d(TAG, "Error getting location settings resolution: " + sendEx.message)
                 }
@@ -238,7 +247,7 @@ class SaveReminderFragment : BaseFragment() {
                     reminder.longitude!!,
                     GEOFENCE_RADIUS_IN_METERS
                 )
-                .setExpirationDuration(GEOFENCE_EXPIRATION_IN_MILLISECONDS)
+                .setExpirationDuration(Geofence.NEVER_EXPIRE)
                 .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
                 .build()
 
@@ -249,9 +258,9 @@ class SaveReminderFragment : BaseFragment() {
 
             geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent)?.run {
                 addOnSuccessListener {
-                    //Toast.makeText(requireActivity(), R.string.geofences_added, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireActivity(), R.string.geofences_added, Toast.LENGTH_SHORT).show()
                     Log.i(TAG, "adding geofence" + geofence.requestId)
-
+                    _viewModel.validateAndSaveReminder(reminder)
                 }
                 addOnFailureListener {
                     //Toast.makeText(requireActivity(), R.string.geofences_not_added, Toast.LENGTH_SHORT).show()
